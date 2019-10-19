@@ -6,10 +6,7 @@ import Paper from "@material-ui/core/Paper";
 import TextField from "@material-ui/core/TextField";
 import Button from "@material-ui/core/Button";
 import IconButton from "@material-ui/core/IconButton";
-import MenuIcon from "@material-ui/icons/Menu";
-import Drawer from "@material-ui/core/Drawer";
-import { Link, Route } from "react-router-dom";
-import { auth } from "./firebase";
+import { auth, db } from "./firebase";
 import List from "@material-ui/core/List";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemIcon from "@material-ui/core/ListItemIcon";
@@ -20,10 +17,9 @@ import DeleteIcon from "@material-ui/icons/Delete";
 
 export function App(props) {
   const [user, setUser] = useState(null);
-  const [tasks, setTasks] = useState([
-    { id: 1, text: "some task", checked: true },
-    { id: 2, text: "another task", checked: false }
-  ]);
+  const [tasks, setTasks] = useState([]);
+  const [new_task, setNewTask] = useState();
+
   useEffect(() => {
     const refresh = auth.onAuthStateChanged(u => {
       if (u) {
@@ -35,6 +31,31 @@ export function App(props) {
     return refresh;
   }, [props.history]);
 
+  useEffect(() => {
+    let refresh;
+
+    if (user) {
+      refresh = db
+        .collection("users")
+        .doc(user.uid)
+        .collection("tasks")
+        .onSnapshot(snapshot => {
+          const updated_tasks = [];
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            updated_tasks.push({
+              text: data.text,
+              checked: data.checked,
+              id: doc.id
+            });
+          });
+          setTasks(updated_tasks);
+        });
+    }
+
+    return refresh;
+  }, [user]);
+
   const handleSignOut = () => {
     auth
       .signOut()
@@ -45,15 +66,29 @@ export function App(props) {
   };
 
   const handleAddTask = () => {
-    console.log("add task");
+    db.collection("users")
+      .doc(user.uid)
+      .collection("tasks")
+      .add({ text: new_task, checked: false })
+      .then(() => {
+        setNewTask("");
+      });
   };
 
-  const handleDeleteTask = () => {
-    console.log("delete task");
+  const handleDeleteTask = task_id => {
+    db.collection("users")
+      .doc(user.uid)
+      .collection("tasks")
+      .doc(task_id)
+      .delete();
   };
 
-  const handleCheckTask = checked => {
-    console.log("check task", checked);
+  const handleCheckTask = (checked, task_id) => {
+    db.collection("users")
+      .doc(user.uid)
+      .collection("tasks")
+      .doc(task_id)
+      .update({ checked: checked });
   };
 
   if (!user) return <div />;
@@ -98,6 +133,10 @@ export function App(props) {
               fullWidth
               placeholder="Write Task Here"
               style={{ marginRight: "30px" }}
+              value={new_task}
+              onChange={e => {
+                setNewTask(e.target.value);
+              }}
             />
             <Button variant="contained" color="primary" onClick={handleAddTask}>
               Add
@@ -110,13 +149,17 @@ export function App(props) {
                   <Checkbox
                     checked={value.checked}
                     onChange={(e, checked) => {
-                      handleCheckTask(checked);
+                      handleCheckTask(checked, value.id);
                     }}
                   />
                 </ListItemIcon>
                 <ListItemText primary={value.text} />
                 <ListItemSecondaryAction>
-                  <IconButton onClick={handleDeleteTask}>
+                  <IconButton
+                    onClick={() => {
+                      handleDeleteTask(value.id);
+                    }}
+                  >
                     <DeleteIcon />
                   </IconButton>
                 </ListItemSecondaryAction>
