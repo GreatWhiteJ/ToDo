@@ -10,155 +10,20 @@ import MenuIcon from "@material-ui/icons/Menu";
 import Drawer from "@material-ui/core/Drawer";
 import { Link, Route } from "react-router-dom";
 import { auth } from "./firebase";
-
-export function SignIn(props) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  useEffect(() => {
-    const refresh = auth.onAuthStateChanged(u => {
-      if (u) {
-        props.history.push("/app");
-      }
-    });
-    return refresh;
-  }, [props.history]);
-
-  const handleSignIn = () => {
-    auth
-      .signInWithEmailAndPassword(email, password)
-      .then(() => {})
-      .catch(error => {
-        window.alert(error.message);
-      });
-  };
-
-  return (
-    <div>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography color="inherit" variant="h6">
-            Sign In
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      <div style={{ display: "flex", justifyContent: "center" }}>
-        <Paper style={{ width: "400px", marginTop: 30, padding: "40px" }}>
-          <TextField
-            fullWidth={true}
-            placeholder="email"
-            value={email}
-            onChange={e => {
-              setEmail(e.target.value);
-            }}
-          />
-          <TextField
-            fullWidth={true}
-            placeholder="password"
-            value={password}
-            type="password"
-            onChange={e => {
-              setPassword(e.target.value);
-            }}
-            style={{ marginTop: 20 }}
-          />
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginTop: "30px",
-              alignItems: "center"
-            }}
-          >
-            <div>
-              Don't have an account? <Link to="/signup">Sign up!</Link>
-            </div>
-            <Button color="primary" variant="contained" onClick={handleSignIn}>
-              Sign In
-            </Button>
-          </div>
-        </Paper>
-      </div>
-    </div>
-  );
-}
-
-export function SignUp(props) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  const handleSignUp = () => {
-    auth
-      .createUserWithEmailAndPassword(email, password)
-      .then(() => {
-        props.history.push("/app");
-      })
-      .catch(error => {
-        window.alert(error.message);
-      });
-  };
-
-  return (
-    <div>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography color="inherit" variant="h6">
-            Sign Up
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      <div style={{ display: "flex", justifyContent: "center" }}>
-        <Paper style={{ width: "400px", marginTop: 30, padding: "40px" }}>
-          <TextField
-            fullWidth={true}
-            placeholder="email"
-            value={email}
-            onChange={e => {
-              setEmail(e.target.value);
-            }}
-          />
-          <TextField
-            fullWidth={true}
-            placeholder="password"
-            type="password"
-            value={password}
-            onChange={e => {
-              setPassword(e.target.value);
-            }}
-            style={{ marginTop: 20 }}
-          />
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginTop: "30px",
-              alignItems: "center"
-            }}
-          >
-            <div>
-              Already have an account? <Link to="/">Sign in!</Link>
-            </div>
-            <Button color="primary" variant="contained" onClick={handleSignUp}>
-              Sign Up
-            </Button>
-          </div>
-        </Paper>
-      </div>
-    </div>
-  );
-}
+import List from "@material-ui/core/List";
+import ListItem from "@material-ui/core/ListItem";
+import ListItemIcon from "@material-ui/core/ListItemIcon";
+import ListItemSecondaryAction from "@material-ui/core/ListItemSecondaryAction";
+import ListItemText from "@material-ui/core/ListItemText";
+import Checkbox from "@material-ui/core/Checkbox";
+import DeleteIcon from "@material-ui/icons/Delete";
 
 export function App(props) {
-  const [drawer_open, setDrawerOpen] = useState(false);
-  const handleMenuOpen = () => {
-    setDrawerOpen(true);
-  };
-  const handleCloseDrawer = () => {
-    setDrawerOpen(false);
-  };
-
   const [user, setUser] = useState(null);
-
+  const [tasks, setTasks] = useState([
+    { id: 1, text: "some task", checked: true },
+    { id: 2, text: "another task", checked: false }
+  ]);
   useEffect(() => {
     const refresh = auth.onAuthStateChanged(u => {
       if (u) {
@@ -179,21 +44,30 @@ export function App(props) {
       });
   };
 
+  const handleAddTask = () => {
+    console.log("add task");
+  };
+
+  const handleDeleteTask = () => {
+    console.log("delete task");
+  };
+
+  const handleCheckTask = checked => {
+    console.log("check task", checked);
+  };
+
   if (!user) return <div />;
 
   return (
     <div>
       <AppBar position="static">
         <Toolbar>
-          <IconButton edge="start" color="inherit" onClick={handleMenuOpen}>
-            <MenuIcon />
-          </IconButton>
           <Typography
             color="inherit"
             variant="h6"
             style={{ marginLeft: 15, flexGrow: 1 }}
           >
-            News
+            To Do List
           </Typography>
           <Typography color="inherit" style={{ marginRight: 30 }}>
             Hi {user.email}
@@ -203,27 +77,54 @@ export function App(props) {
           </Button>
         </Toolbar>
       </AppBar>
-      <Drawer open={drawer_open} onClose={handleCloseDrawer}>
-        I'm a drawer
-      </Drawer>
-      <Route
-        exact
-        path="/app"
-        render={() => {
-          return (
-            <div>
-              <div>Home Page</div>
-              <Link to="/app/product/1">Product 1</Link>
-            </div>
-          );
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center"
         }}
-      />
-      <Route
-        path="/app/product/:id"
-        render={() => {
-          return <div>Product 1</div>;
-        }}
-      />
+      >
+        <Paper
+          style={{
+            maxWidth: "500px",
+            width: "100%",
+            marginTop: 30,
+            padding: "40px"
+          }}
+        >
+          <Typography variant={"h6"}> To Do List </Typography>
+          <div style={{ display: "flex", marginTop: "40px" }}>
+            <TextField
+              fullWidth
+              placeholder="Write Task Here"
+              style={{ marginRight: "30px" }}
+            />
+            <Button variant="contained" color="primary" onClick={handleAddTask}>
+              Add
+            </Button>
+          </div>
+          <List>
+            {tasks.map(value => (
+              <ListItem key={value.id}>
+                <ListItemIcon>
+                  <Checkbox
+                    checked={value.checked}
+                    onChange={(e, checked) => {
+                      handleCheckTask(checked);
+                    }}
+                  />
+                </ListItemIcon>
+                <ListItemText primary={value.text} />
+                <ListItemSecondaryAction>
+                  <IconButton onClick={handleDeleteTask}>
+                    <DeleteIcon />
+                  </IconButton>
+                </ListItemSecondaryAction>
+              </ListItem>
+            ))}
+          </List>
+        </Paper>
+      </div>
     </div>
   );
 }
